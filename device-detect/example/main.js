@@ -46,9 +46,11 @@ function addData(name, value) {
 }
 
 async function main() {
+    addData("User Agent", window.navigator.userAgent);
+    addData("Screen Resolution", `${screen.width}x${screen.height}`);
+    
     addData("Device Type", getDeviceType());
     addData("Android Device Name", getAndroidDeviceNameFromUserAgent());
-    addData("User Agent", window.navigator.userAgent);
     addData("Browser", getBrowser());
     addData("Device Model", await getDeviceModel());
     addData("Ios Device Name", getIosDeviceName());
