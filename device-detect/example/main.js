@@ -45,18 +45,26 @@ function addData(name, value) {
     document.body.appendChild(p);
 }
 
+function addSeparator(){
+    const hr = document.createElement("hr");
+    document.body.appendChild(hr);
+}
+
 async function main() {
     addData("User Agent", window.navigator.userAgent);
     addData("Screen Resolution", `${screen.width}x${screen.height}`);
     
+    addSeparator();
     addData("Device Type", getDeviceType());
-    addData("Android Device Name", getAndroidDeviceNameFromUserAgent());
-    addData("Browser", getBrowser());
     addData("Device Model", await getDeviceModel());
-    addData("Ios Device Name", getIosDeviceName());
-    addData("Languages", JSON.stringify(getLanguages()));
     addData("OS", getOS());
     addData("Time Zone", getTimeZone());
+    addData("Languages", JSON.stringify(getLanguages()));
+    addData("Browser", getBrowser());
+    addSeparator();
+    
+    addData("Android Device Name", getAndroidDeviceNameFromUserAgent());
+    addData("Ios Device Name", getIosDeviceName());
     addData("Incognito Mode", await isIncognitoMode());
     addData("Mobile", isMobile());
     addData("Pointer Device", isPointerDevice());
