@@ -36,37 +36,6 @@ export function createFromHTML(html) {
     return template.content;
 }
 
-/**
- * Adds a new paragraph to the body of the document with the format:
- * <code>&lt;p&gt;{name}: {value}&lt;/p&gt;</code>
- * @param {string} name - The name of the value to add
- * @param {string | boolean} value - The value to add
- */
-function addData(name, value) {
-    const p = document.createElement("p");
-    const elementName = document.createElement("strong");
-    const elementValue = document.createElement("span");
-
-    elementName.textContent = name;
-    if (typeof value === "boolean") {
-        elementValue.textContent = value ? "Yes" : "No";
-    } else {
-        elementValue.textContent = value;
-    }
-
-    elementValue.classList.add("ms-3");
-
-    p.appendChild(elementName);
-    p.appendChild(elementValue);
-
-    document.body.appendChild(p);
-}
-
-function addSeparator() {
-    const hr = document.createElement("hr");
-    document.body.appendChild(hr);
-}
-
 async function main() {
     let fragment = createFromHTML(/* html */ `
 <h1 class="display-4 text-center">Device Detect</h1>
@@ -126,17 +95,23 @@ async function main() {
             <td>Webview</td>
             <td>${isWebview() ? "Yes" : "No"}</td>
         </tr>
+    </tbody>
+</table>
+<h2 class="display-4 text-center">Device Specific</h2>
+<table class="table table-striped">
+    <thead>
         <tr>
-            <td colspan="100" class="text-center display-6">
-                Metadata
-            </td>
+            <th>Name</th>
+            <th>Value</th>
         </tr>
+    </thead>
+    <tbody>
         <tr>
             <td>Android Device Name</td>
             <td>${getAndroidDeviceNameFromUserAgent()}</td>
         </tr>
         <tr>
-            <td>Ios Device Name</td>
+            <td>Ios Device Name (by screen size)</td>
             <td>${getIosDeviceName()}</td>
         </tr>
         <tr>
