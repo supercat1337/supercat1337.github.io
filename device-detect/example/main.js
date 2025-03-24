@@ -38,7 +38,7 @@ export function createFromHTML(html) {
 
 async function main() {
     let fragment = createFromHTML(/* html */ `
-<h1 class="display-4 text-center">Device Detect</h1>
+<h1 class="display-6 text-center">Device Detect</h1>
 <table class="table table-striped">
     <thead>
         <tr>
@@ -97,7 +97,7 @@ async function main() {
         </tr>
     </tbody>
 </table>
-<h2 class="display-4 text-center">Device Specific</h2>
+<h2 class="display-6 text-center mb-5">Device Specific</h2>
 <table class="table table-striped">
     <thead>
         <tr>
