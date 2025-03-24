@@ -42,7 +42,7 @@ async function main() {
 <table class="table table-striped">
     <thead>
         <tr>
-            <th>Name</th>
+            <th class="col-3">Name</th>
             <th>Value</th>
         </tr>
     </thead>
@@ -97,11 +97,11 @@ async function main() {
         </tr>
     </tbody>
 </table>
-<h2 class="display-6 text-center mb-5">Device Specific</h2>
-<table class="table table-striped">
+<h2 class="display-6 text-center">Device Specific</h2>
+<table class="table table-striped mb-5">
     <thead>
         <tr>
-            <th>Name</th>
+            <th class="col-3">Name</th>
             <th>Value</th>
         </tr>
     </thead>
