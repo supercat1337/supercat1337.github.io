@@ -139,9 +139,9 @@ async function main() {
             <td>Ios Device Name</td>
             <td>${getIosDeviceName()}</td>
         </tr>
-        <tr></tr>
-        <td>Mobile</td>
-        <td>${isMobile() ? "Yes" : "No"}</td>
+        <tr>
+            <td>Mobile</td>
+            <td>${isMobile() ? "Yes" : "No"}</td>
         </tr>
         <tr>
             <td>Windows 11</td>
