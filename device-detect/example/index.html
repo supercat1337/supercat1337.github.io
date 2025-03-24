@@ -10,7 +10,9 @@
 </head>
 
 <body class="container pt-3">
-    <script type="module" src="./main.js?2" defer></script>
+    <script type="module" defer>
+        import("./main.js?" + Math.random());
+    </script>
 </body>
 
 </html>
