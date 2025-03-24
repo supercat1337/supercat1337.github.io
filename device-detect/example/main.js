@@ -69,94 +69,94 @@ function addSeparator() {
 
 async function main() {
     let fragment = createFromHTML(/* html */ `
-        <h1 class="display-4">Device Detect</h1>
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Value</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>User Agent</td>
-                    <td>${window.navigator.userAgent}</td>
-                </tr>
-                <tr>
-                    <td>Screen Resolution</td>
-                    <td>${screen.width}x${screen.height}</td>
-                </tr>
-                <tr></tr>
-                    <td>Device Type</td>
-                    <td>${getDeviceType()}</td>
-                </tr>
-                <tr>
-                    <td>Device Model</td>
-                    <td>${await getDeviceModel()}</td>
-                </tr>
-                <tr>
-                    <td>OS</td>
-                    <td>${getOS()}</td>
-                </tr>
-                <tr>
-                    <td>Time Zone</td>
-                    <td>${getTimeZone()}</td>
-                </tr>
-                <tr>
-                    <td>Languages</td>
-                    <td>${JSON.stringify(getLanguages())}</td>
-                </tr>
-                <tr>
-                    <td>Browser</td>
-                    <td>${getBrowser()}</td>
-                </tr>
-                <tr>
-                    <td>Incognito Mode</td>
-                    <td>${(await isIncognitoMode()) ? "Yes" : "No"}</td>
-                </tr>
-                <tr>
-                    <td>Pointer Device</td>
-                    <td>${isPointerDevice() ? "Yes" : "No"}</td>
-                </tr>
-                <tr>
-                    <td>Sensor Device</td>
-                    <td>${isSensorDevice() ? "Yes" : "No"}</td>
-                </tr>
-                <tr>
-                    <td>Webview</td>
-                    <td>${isWebview() ? "Yes" : "No"}</td>
-                </tr>
-                <tr>
-                    <td colspan="100" class="text-center display-6">
-                    Metadata
-                    </td>
-                </tr>
-                <tr>
-                    <td>Android Device Name</td>
-                    <td>${getAndroidDeviceNameFromUserAgent()}</td>
-                </tr>
-                <tr>
-                    <td>Ios Device Name</td>
-                    <td>${getIosDeviceName()}</td>
-                </tr>
-                <tr></tr>
-                    <td>Mobile</td>
-                    <td>${isMobile() ? "Yes" : "No"}</td>
-                </tr>
-                <tr>
-                    <td>Windows 11</td>
-                    <td>${(await isWindows11()) ? "Yes" : "No"}</td>
-                </tr>
-                <tr>
-                    <td>IPad</td>
-                    <td>${isIPad() ? "Yes" : "No"}</td>
-                </tr>
-                <tr>
-                    <td>IPhone</td>
-                    <td>${isIPhone() ? "Yes" : "No"}</td>
-                </tr>
-            </tbody>
-        </table>
+<h1 class="display-4 text-center">Device Detect</h1>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Value</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>User Agent</td>
+            <td>${window.navigator.userAgent}</td>
+        </tr>
+        <tr>
+            <td>Screen Resolution</td>
+            <td>${screen.width}x${screen.height}</td>
+        </tr>
+        <tr>
+            <td>Device Type</td>
+            <td>${getDeviceType()}</td>
+        </tr>
+        <tr>
+            <td>Device Model</td>
+            <td>${await getDeviceModel()}</td>
+        </tr>
+        <tr>
+            <td>OS</td>
+            <td>${getOS()}</td>
+        </tr>
+        <tr>
+            <td>Time Zone</td>
+            <td>${getTimeZone()}</td>
+        </tr>
+        <tr>
+            <td>Languages</td>
+            <td>${JSON.stringify(getLanguages())}</td>
+        </tr>
+        <tr>
+            <td>Browser</td>
+            <td>${getBrowser()}</td>
+        </tr>
+        <tr>
+            <td>Incognito Mode</td>
+            <td>${(await isIncognitoMode()) ? "Yes" : "No"}</td>
+        </tr>
+        <tr>
+            <td>Pointer Device</td>
+            <td>${isPointerDevice() ? "Yes" : "No"}</td>
+        </tr>
+        <tr>
+            <td>Sensor Device</td>
+            <td>${isSensorDevice() ? "Yes" : "No"}</td>
+        </tr>
+        <tr>
+            <td>Webview</td>
+            <td>${isWebview() ? "Yes" : "No"}</td>
+        </tr>
+        <tr>
+            <td colspan="100" class="text-center display-6">
+                Metadata
+            </td>
+        </tr>
+        <tr>
+            <td>Android Device Name</td>
+            <td>${getAndroidDeviceNameFromUserAgent()}</td>
+        </tr>
+        <tr>
+            <td>Ios Device Name</td>
+            <td>${getIosDeviceName()}</td>
+        </tr>
+        <tr></tr>
+        <td>Mobile</td>
+        <td>${isMobile() ? "Yes" : "No"}</td>
+        </tr>
+        <tr>
+            <td>Windows 11</td>
+            <td>${(await isWindows11()) ? "Yes" : "No"}</td>
+        </tr>
+        <tr>
+            <td>IPad</td>
+            <td>${isIPad() ? "Yes" : "No"}</td>
+        </tr>
+        <tr>
+            <td>IPhone</td>
+            <td>${isIPhone() ? "Yes" : "No"}</td>
+        </tr>
+    </tbody>
+</table>
 `);
 
     document.body.appendChild(fragment);
