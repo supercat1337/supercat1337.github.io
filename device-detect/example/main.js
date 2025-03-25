@@ -1,6 +1,6 @@
 // @ts-check
 
-import {
+const {
     getAndroidDeviceNameFromUserAgent,
     getBrowser,
     getDeviceModel,
@@ -19,7 +19,10 @@ import {
     getDeviceType,
     getBrowserLanguage,
     isMac,
-} from "https://cdn.jsdelivr.net/npm/@supercat1337/device-detect/dist/device-detect.esm.min.js";
+} = await import(
+    "https://cdn.jsdelivr.net/npm/@supercat1337/device-detect/dist/device-detect.esm.min.js?" +
+        new Date().getTime()
+);
 
 /**
  * Converts an HTML string to an DocumentFragment.
