@@ -297,6 +297,28 @@ class PreferredSchemeStorage {
             this.#preferredColorScheme = "auto";
             localStorage.setItem("preferredColorScheme", "auto");
         }
+
+        window.addEventListener("storage", (event) => {
+            if (event.key === "preferredColorScheme") {
+                let value = event.newValue ? event.newValue : "auto";
+                /** @type {"dark"|"light"|"auto"} */
+                let validatedValue =
+                    value === "dark" || value === "light" || value === "auto"
+                        ? value
+                        : "auto";
+
+                if (validatedValue === this.#preferredColorScheme) {
+                    return;
+                }
+
+                this.#preferredColorScheme = validatedValue;
+
+                this.#eventEmitter.emit(
+                    "preferred-scheme-change",
+                    event.newValue
+                );
+            }
+        });
     }
 
     /**
