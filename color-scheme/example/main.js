@@ -1,10 +1,10 @@
 // @ts-check
 
 import {
-    currentColorSchemeStorage,
+    currentSchemeStorage,
     systemSchemeStorage,
     preferredSchemeStorage,
-} from "./theme.bundle.esm.js";
+} from "./color-scheme.bundle.esm.js";
 import { selectRefs, createFromHTML, generateId } from "./dom-scope.esm.js";
 
 /**
@@ -50,16 +50,16 @@ function initToggler() {
 
     const { switcher } = selectRefs(fragment, annotation);
 
-    let darkmode_is_on = currentColorSchemeStorage.scheme === "dark";
+    let darkmode_is_on = currentSchemeStorage.scheme === "dark";
     switcher.checked = darkmode_is_on;
 
-    currentColorSchemeStorage.onSchemeChange((scheme) => {
+    currentSchemeStorage.onSchemeChange((scheme) => {
         let darkmode_is_on = scheme === "dark";
         switcher.checked = darkmode_is_on;
     });
 
     switcher.addEventListener("change", () => {
-        currentColorSchemeStorage.scheme = switcher.checked ? "dark" : "light";
+        currentSchemeStorage.scheme = switcher.checked ? "dark" : "light";
     });
 
     document.body.appendChild(fragment);
@@ -122,21 +122,21 @@ function initColorSchemeSelect() {
 
     modeSelectAuto.addEventListener("click", () => {
         preferredSchemeStorage.scheme = "auto";
-        currentColorSchemeStorage.scheme = "auto";
+        currentSchemeStorage.scheme = "auto";
         deselectListItem(modeSelectLight, modeSelectDark);
         selectListItem(modeSelectAuto);
     });
 
     modeSelectLight.addEventListener("click", () => {
         preferredSchemeStorage.scheme = "light";
-        currentColorSchemeStorage.scheme = "light";
+        currentSchemeStorage.scheme = "light";
         deselectListItem(modeSelectAuto, modeSelectDark);
         selectListItem(modeSelectLight);
     });
 
     modeSelectDark.addEventListener("click", () => {
         preferredSchemeStorage.scheme = "dark";
-        currentColorSchemeStorage.scheme = "dark";
+        currentSchemeStorage.scheme = "dark";
         deselectListItem(modeSelectAuto, modeSelectLight);
         selectListItem(modeSelectDark);
     });
@@ -146,19 +146,19 @@ function initSystemColorSchemeInfo() {
     let fragment = createFromHTML(/* html */ `
         <div class="mt-4 text-center">
         <span>System Color Scheme:</span>
-        <span ref="systemColorScheme"></span>
+        <span ref="systemColorSchemeText"></span>
         </div>`);
 
     const annotation = {
-        systemColorScheme: HTMLSpanElement,
+        systemColorSchemeText: HTMLSpanElement,
     };
 
-    let { systemColorScheme } = selectRefs(fragment, annotation);
+    let { systemColorSchemeText } = selectRefs(fragment, annotation);
 
-    systemColorScheme.textContent = systemSchemeStorage.scheme;
+    systemColorSchemeText.textContent = systemSchemeStorage.scheme;
 
     systemSchemeStorage.onSchemeChange((scheme) => {
-        systemColorScheme.textContent = scheme;
+        systemColorSchemeText.textContent = scheme;
     });
 
     document.body.appendChild(fragment);
