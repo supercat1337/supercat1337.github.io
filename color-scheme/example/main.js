@@ -73,6 +73,8 @@ function initToggler() {
  */
 function deselectListItem(...listItems) {
     for (let listItem of listItems) {
+        if (!listItem.classList.contains("active")) continue;
+
         listItem.classList.remove("active");
         listItem.setAttribute("aria-current", "false");
     }
@@ -84,6 +86,8 @@ function deselectListItem(...listItems) {
  * @param {HTMLElement} listItem - The list item to select.
  */
 function selectListItem(listItem) {
+    if (listItem.classList.contains("active")) return;
+
     listItem.classList.add("active");
     listItem.setAttribute("aria-current", "true");
 }
@@ -139,6 +143,19 @@ function initColorSchemeSelect() {
         currentSchemeStorage.scheme = "dark";
         deselectListItem(modeSelectAuto, modeSelectLight);
         selectListItem(modeSelectDark);
+    });
+
+    preferredSchemeStorage.onSchemeChange((scheme) => {
+        if (scheme === "auto") {
+            deselectListItem(modeSelectLight, modeSelectDark);
+            selectListItem(modeSelectAuto);
+        } else if (scheme === "light") {
+            deselectListItem(modeSelectAuto, modeSelectDark);
+            selectListItem(modeSelectLight);
+        } else if (scheme === "dark") {
+            deselectListItem(modeSelectAuto, modeSelectLight);
+            selectListItem(modeSelectDark);
+        }
     });
 }
 
