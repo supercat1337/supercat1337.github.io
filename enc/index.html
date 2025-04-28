@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Encrypt</title>
+    <link href="./bootstrap.min.css" rel="stylesheet">
+    <script src="./encrypt.js" type="module" defer></script>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg bg-body-tertiary mb-3">
+        <div class="container col-md-6 mx-auto">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item ">
+                        <a class="nav-link active" href="./index.html">Encrypt</a>
+                    </li>
+                    <li class="nav-item ms-4">
+                        <a class="nav-link" href="./decrypt.html">Decrypt</a>
+                    </li>
+                    <li class="nav-item ms-4">
+                        <a class="nav-link" href="./decrypt-text.html">Decrypt Text</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="mt-5 col-md-6 mx-auto container">
+        <h1 class="mb-3 display-6 ">Encrypt file <button id="clearFileBtn"
+                class="btn btn-outline-secondary ms-3">Clear</button>
+        </h1>
+
+        <p>Encrypt a file and download it. The secret will be generated automatically.</p>
+        <p>To decrypt the file, you will need the secret.</p>
+        <div class="mb-3 d-flex">
+            <input type="file" id="fileToEncryptInput" class="form-control mb-3">
+        </div>
+
+        <div class="mb-3 text-center">
+            <button id="downloadEncryptedBtn" class="btn btn-outline-secondary btn-lg mb-3">Encrypt</button>
+        </div>
+        <div class="mb-3">
+            <label for="secretInput">Your secret</label>
+            <input readonly type="text" id="secretInput" class="form-control mb-3">
+        </div>
+        <div class="text-danger text-center" id="errorText"></div>
+    </div>
+
+    <script src="./bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
