@@ -81,7 +81,8 @@ async function decryptFile(file) {
         sfd.terminate();
     } catch (e) {
         console.error(e);
-        errorText.innerText = e.message;
+        errorText.innerText =
+            "Failed to decrypt the file. Please check that the key is correct and the file is a valid encrypted file.";
         return;
     }
 }
