@@ -80,6 +80,7 @@ async function decryptFile(file) {
         console.log("File decrypted and saved successfully.");
         sfd.terminate();
     } catch (e) {
+        console.error(e);
         errorText.innerText = e.message;
         return;
     }
