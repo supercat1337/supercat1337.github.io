@@ -4,7 +4,7 @@ import {
     currentSchemeStorage,
     systemSchemeStorage,
     preferredSchemeStorage,
-} from "./color-scheme.bundle.esm.js";
+} from "./color-scheme.bundle.esm.min.js";
 import { selectRefs, createFromHTML, generateId } from "./dom-scope.esm.js";
 
 /**
