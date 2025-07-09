@@ -20,7 +20,7 @@ const {
     getBrowserLanguage,
     isMac,
 } = await import(
-    "https://cdn.jsdelivr.net/npm/@supercat1337/device-detect@1.0.3/dist/device-detect.esm.min.js?" +
+    "https://cdn.jsdelivr.net/npm/@supercat1337/device-detect@1.0.4/dist/device-detect.esm.min.js?" +
         new Date().getTime()
 );
 
