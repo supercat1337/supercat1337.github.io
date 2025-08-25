@@ -1633,6 +1633,9 @@ var qrcode_default = qrcode;
 var stringToBytes = qrcode.stringToBytes;
 
 // src/index.js
+qrcode_default.stringToBytes = function(data) {
+  return data;
+};
 var QRCodeGenerator = class {
   /**
    * @constructor
@@ -1641,9 +1644,9 @@ var QRCodeGenerator = class {
    * @param {string} generateBtnId - ID of the generate button
    * @param {string} pasteBtnId - ID of the paste button
    * @param {string} clearBtnId - ID of the clear button
-   * @param {number} [maxLength=1000] - Maximum text length for QR code
+   * @param {number} [maxLength=800] - Maximum text length for QR code
    */
-  constructor(textInputId, qrCodeContainerId, generateBtnId, pasteBtnId, clearBtnId, maxLength = 1e3) {
+  constructor(textInputId, qrCodeContainerId, generateBtnId, pasteBtnId, clearBtnId, maxLength = 800) {
     this.textInput = /** @type {HTMLTextAreaElement} */
     document.getElementById(textInputId);
     this.qrCodeContainer = /** @type {HTMLDivElement} */
@@ -1708,7 +1711,7 @@ var QRCodeGenerator = class {
   /**
    * Get optimal error correction level based on text length
    * @private
-   * @param {string} text - Input text
+   * @param {string|Uint8Array} text - Input text
    * @returns {'L' | 'M' | 'Q' | 'H'} Error correction level
    */
   getOptimalErrorCorrection(text) {
@@ -1733,12 +1736,13 @@ var QRCodeGenerator = class {
       );
       return;
     }
+    let textByteArray = new TextEncoder().encode(text);
     this.qrCodeContainer.innerHTML = "";
     this.errorContainer.textContent = "";
     try {
-      const errorCorrectionLevel = this.getOptimalErrorCorrection(text);
+      const errorCorrectionLevel = this.getOptimalErrorCorrection(textByteArray);
       const qr = qrcode_default(0, errorCorrectionLevel);
-      qr.addData(text);
+      qr.addData(textByteArray, "Byte");
       qr.make();
       const svg = this.createQRCodeSVG(qr);
       this.qrCodeContainer.appendChild(svg);
