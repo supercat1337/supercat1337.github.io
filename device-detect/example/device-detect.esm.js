@@ -749,76 +749,29 @@ async function testSafariPrivate() {
 }
 
 /**
- * Chromium implementation with proper resource cleanup.
+ * Chromium incognito detection using storage quota estimate.
+ * In incognito mode, the storage quota is typically very small (e.g., 10–20 MB).
+ *
  * @returns {Promise<boolean>}
  */
-function testChromiumPrivate() {
-    return new Promise(resolve => {
-        const workerCode = `
-            (async () => {
-                try {
-                    const root = await navigator.storage.getDirectory();
-                    const fileHandle = await root.getFileHandle('_', { create: true });
-                    const accessHandle = await fileHandle.createSyncAccessHandle();
-                    const buffer = new Uint8Array(10240);
-                    let minDuration = Infinity;
-                    for (let i = 0; i < 5; i++) {
-                        accessHandle.write(buffer, { at: 0 });
-                        const start = performance.now();
-                        await accessHandle.flush();
-                        const duration = performance.now() - start;
-                        if (duration < minDuration) minDuration = duration;
-                    }
-                    accessHandle.close();
-                    postMessage(minDuration < 0.12);
-                } catch {
-                    postMessage(false);
-                }
-            })()
-        `;
+async function testChromiumPrivate() {
+    if (typeof navigator.storage?.estimate !== 'function') {
+        // Fallback for older Chrome without the API
+        return false;
+    }
 
-        const blob = new Blob([workerCode], { type: 'application/javascript' });
-        const blobUrl = URL.createObjectURL(blob);
-        /** @type {Worker|null} */
-        let worker = null;
-
-        const cleanUp = () => {
-            if (worker) {
-                worker.terminate();
-                worker = null;
-            }
-            try {
-                URL.revokeObjectURL(blobUrl);
-            } catch {
-                /* ignore */
-            }
-        };
-
-        try {
-            worker = new Worker(blobUrl);
-        } catch (e) {
-            cleanUp();
-            resolve(false);
-            return;
+    try {
+        const estimate = await navigator.storage.estimate();
+        // Quota is in bytes. Incognito mode typically gives < 100 MB.
+        // You can adjust the threshold as needed (e.g., 50 * 1024 * 1024).
+        if (estimate.quota && estimate.quota < 50 * 1024 * 1024) {
+            return true;
         }
-
-        const timeout = setTimeout(() => {
-            cleanUp();
-            resolve(false);
-        }, 150);
-
-        worker.onmessage = e => {
-            clearTimeout(timeout);
-            cleanUp();
-            resolve(e.data);
-        };
-
-        worker.onerror = () => {
-            clearTimeout(timeout);
-            cleanUp();
-            resolve(false);
-        };
-    });
+        return false;
+    } catch (error) {
+        // If we cannot get estimate, assume normal mode.
+        return false;
+    }
 }
 
 // @ts-check
