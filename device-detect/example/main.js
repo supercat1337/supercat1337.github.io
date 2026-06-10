@@ -13,7 +13,7 @@ export function createFromHTML(html) {
 
 async function main() {
   // Dynamic import with cache-busting query parameter
-  const module = await import(`@supercat1337/device-detect?${Date.now()}`);
+  const module = await import(`./device-detect.esm.js?${Date.now()}`);
   const {
     getEnvironment,
     isPointerDevice,
