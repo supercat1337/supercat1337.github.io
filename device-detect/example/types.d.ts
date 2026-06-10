@@ -110,6 +110,21 @@ export function getEnvironment(
     customUserAgent?: string
 ): Promise<EnvironmentInfo>;
 
+/**
+ * Options for fine-tuning the modern Chromium incognito detection algorithm.
+ */
+export interface ChromiumDetectionOptions {
+    /** Minimum threshold in bytes for RAM-backed storage (default: 1.5 GB) */
+    minStorageThreshold?: number;
+    /** Multiplier applied to JS heap limit for boundary checks (default: 2) */
+    heapMultiplier?: number;
+}
+
+/**
+ * Main module API for incognito detection.
+ */
+export type IsIncognitoMode = () => Promise<boolean>;
+
 /* From browser.d.ts */
 /**
  * Asynchronously gets the browser name and version.
@@ -188,9 +203,9 @@ export const safeNavigator: Navigator | null;
 /* From incognito.d.ts */
 /**
  * Detects if the browser is operating in Private/Incognito mode.
- * Highly robust, production-grade implementation with zero memory leaks.
+ * Highly robust implementation addressing RAM-backed storage isolation.
  *
- * @returns {Promise<boolean>}
+ * @returns {Promise<boolean>} Resolves to true if private mode is detected, false otherwise.
  */
 export function isIncognitoMode(): Promise<boolean>;
 

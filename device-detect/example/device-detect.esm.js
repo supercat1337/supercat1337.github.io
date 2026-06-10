@@ -576,9 +576,9 @@ function getLanguages(displayLocale, fallbackLanguages) {
 
 /**
  * Detects if the browser is operating in Private/Incognito mode.
- * Highly robust, production-grade implementation with zero memory leaks.
+ * Highly robust implementation addressing RAM-backed storage isolation.
  *
- * @returns {Promise<boolean>}
+ * @returns {Promise<boolean>} Resolves to true if private mode is detected, false otherwise.
  */
 async function isIncognitoMode() {
     if (!isClient) return false;
@@ -588,7 +588,7 @@ async function isIncognitoMode() {
         return msiePrivateTest();
     }
 
-    // 2. Use the centralized getBrowser() helper as the single source of truth
+    // 2. Fetch the standardized browser name from the shared helper
     const browserName = await getBrowser();
 
     try {
@@ -600,18 +600,16 @@ async function isIncognitoMode() {
             return await testSafariPrivate();
         }
 
-        // Standard Chromium-based browsers (Chrome, Edge, Opera, etc.)
+        // Modern Chromium-based browsers (Chrome, Edge, Opera, Vivaldi, Brave)
         if (
             browserName.startsWith('Chrome') ||
             browserName.startsWith('Edge') ||
             browserName.startsWith('Opera')
         ) {
-            if ('storage' in navigator && 'getDirectory' in navigator.storage) {
-                return await testChromiumPrivate();
-            }
+            return await testChromiumModernPrivate();
         }
     } catch (e) {
-        // Fail silently and return false if background APIs throw unexpected security errors
+        // Fail silently and return false if DOM exceptions or security errors are thrown
         return false;
     }
 
@@ -631,9 +629,7 @@ function isMSIEEngine() {
 }
 
 /**
- * Internet Explorer private mode detection.
- * Checks for typeof to prevent strict mode crashes in legacy environments.
- *
+ * Internet Explorer private mode detection fallback.
  * @returns {boolean}
  */
 function msiePrivateTest() {
@@ -645,192 +641,115 @@ function msiePrivateTest() {
 }
 
 /**
- * Firefox implementation leveraging OPFS or legacy InvalidStateError inside IndexedDB.
+ * Firefox implementation leveraging Origin Private File System (OPFS) constraints.
+ * OPFS throws a explicit SecurityError inside Private Browsing mode.
+ *
  * @returns {Promise<boolean>}
  */
 async function testFirefoxPrivate() {
-    if (typeof navigator.storage?.getDirectory === 'function') {
+    if (navigator.storage && typeof navigator.storage.getDirectory === 'function') {
         try {
             await navigator.storage.getDirectory();
             return false;
         } catch (e) {
             const errName = e instanceof Error ? e.name : String(e);
-            return errName.includes('SecurityError') || errName.toLowerCase().includes('security');
+            return errName.includes('SecurityError');
         }
     }
-
-    return new Promise(resolve => {
-        const dbName = 'ff_private_test';
-        const request = indexedDB.open(dbName);
-
-        request.onerror = ev => {
-            if (request.error?.name === 'InvalidStateError') ev.preventDefault();
-            resolve(true);
-        };
-
-        request.onsuccess = () => {
-            try {
-                indexedDB.deleteDatabase(dbName);
-            } catch {
-                // Ignore silent database removal errors
-            }
-            resolve(false);
-        };
-    });
+    return false;
 }
 
 /**
- * Safari implementation with transient error extraction and Blob serialization constraints.
+ * Safari implementation extracting transient storage layer exceptions.
+ *
  * @returns {Promise<boolean>}
  */
 async function testSafariPrivate() {
-    // Modern Safari OPFS check
-    if (typeof navigator.storage?.getDirectory === 'function') {
+    if (navigator.storage && typeof navigator.storage.getDirectory === 'function') {
         try {
             await navigator.storage.getDirectory();
             return false;
         } catch (e) {
             const message = e instanceof Error ? e.message.toLowerCase() : String(e).toLowerCase();
-            return message.includes('transient');
+            // Safari explicitly flags OPFS as transient/quota restricted in private tabs
+            return message.includes('transient') || message.includes('quota');
         }
     }
 
-    // Safari 13-18 Blob Serialization Constraint inside memory-backed SQLite
-    if ('indexedDB' in window) {
+    // Legacy Safari fallback using synchronous WebSQL allocation limits
+    try {
+        // @ts-ignore
+        if (typeof openDatabase === 'function') {
+            // @ts-ignore
+            openDatabase('safari_incog_test', '1.0', 'test', 1024);
+            return false;
+        }
+    } catch (e) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Modern Chromium incognito detection strategy.
+ * * Compares the legacy webkitTemporaryStorage allocation limits against the V8
+ * JavaScript heap limits. Standard Chromium spoofing targets navigator.storage.estimate(),
+ * but leaves webkitTemporaryStorage bound to the physical RAM constraints allocated
+ * for the Incognito sandbox profile.
+ *
+ * @param {import('./types.js').ChromiumDetectionOptions} [options] Optional parameters for threshold calibration.
+ * @returns {Promise<boolean>}
+ */
+async function testChromiumModernPrivate(options = {}) {
+    const minStorageThreshold = options.minStorageThreshold || 1.5 * 1024 * 1024 * 1024; // 1.5 GB
+    const heapMultiplier = options.heapMultiplier || 2;
+
+    if (
+        // @ts-ignore
+        navigator.webkitTemporaryStorage &&
+        // @ts-ignore
+        typeof navigator.webkitTemporaryStorage.queryUsageAndQuota === 'function'
+    ) {
         return new Promise(resolve => {
-            const dbName = `safari_pv_${Math.random()}`;
-            try {
-                const req = indexedDB.open(dbName, 1);
-
-                req.onupgradeneeded = ev => {
+            // @ts-ignore
+            navigator.webkitTemporaryStorage.queryUsageAndQuota(
+                // @ts-ignore
+                (usage, quota) => {
+                    // In standard profiles, Chrome allocates vast disk space allowances.
+                    // In Incognito, the pool is limited directly by the OS/V8 memory footprint.
                     // @ts-ignore
-                    const db = ev.target.result;
-                    try {
-                        db.createObjectStore('t', { autoIncrement: true }).put(new Blob());
-                        db.close();
-                        indexedDB.deleteDatabase(dbName);
-                        resolve(false);
-                    } catch (err) {
-                        const msg =
-                            err instanceof Error
-                                ? err.message.toLowerCase()
-                                : String(err).toLowerCase();
-                        try {
-                            indexedDB.deleteDatabase(dbName);
-                        } catch {}
-                        resolve(msg.includes('supported'));
-                    }
-                };
+                    const heapLimit =
+                    // @ts-ignore
+                        window.performance?.memory?.jsHeapSizeLimit || 2 * 1024 * 1024 * 1024;
 
-                req.onerror = () => {
-                    try {
-                        indexedDB.deleteDatabase(dbName);
-                    } catch {}
+                    // Trigger detection if quota matches memory bounds or falls below the physical RAM threshold
+                    if (quota <= heapLimit * heapMultiplier || quota < minStorageThreshold) {
+                        resolve(true);
+                    } else {
+                        resolve(false);
+                    }
+                },
+                () => {
                     resolve(false);
-                };
-            } catch {
-                resolve(false);
-            }
+                }
+            );
         });
     }
 
-    // Ultra-legacy Safari Fallback (with safe environment boundary checks)
-    if (typeof localStorage === 'undefined') {
-        return false;
-    }
-
-    try {
-        localStorage.setItem('__safari_test__', '1');
-        localStorage.removeItem('__safari_test__');
-        return false;
-    } catch {
-        return true;
-    }
-}
-
-/**
- * Chromium incognito detection using storage quota estimate.
- * In normal mode, quota is several GB. In incognito, it's typically < 120 MB.
- *
- * @returns {Promise<boolean>}
- */
-async function testChromiumPrivate() {
-    // 1. Modern API: storage.estimate()
-    if (typeof navigator.storage?.estimate === 'function') {
+    // Secondary fallback for restricted environments where legacy storage interfaces are stripped
+    if (navigator.storage && typeof navigator.storage.estimate === 'function') {
         try {
             const estimate = await navigator.storage.estimate();
-            const INCOGNITO_THRESHOLD = 150 * 1024 * 1024; // 150 MB
-            if (estimate.quota && estimate.quota < INCOGNITO_THRESHOLD) {
+            if (estimate.quota && estimate.quota < 120 * 1024 * 1024) {
                 return true;
             }
-            return false;
         } catch (e) {
-            // Fall through to legacy method
+            // Absorb internal estimate failures
         }
     }
 
-    // 2. Legacy fallback: RequestFileSystem (old Chrome, Safari)
-    return legacyChromiumTest();
-}
-
-/**
- * Legacy fallback using RequestFileSystem or time-based flush.
- */
-function legacyChromiumTest() {
-    return new Promise(resolve => {
-        const workerCode = `
-            (async () => {
-                try {
-                    const root = await navigator.storage.getDirectory();
-                    const fileHandle = await root.getFileHandle('_', { create: true });
-                    const accessHandle = await fileHandle.createSyncAccessHandle();
-                    const buffer = new Uint8Array(10240);
-                    let minDuration = Infinity;
-                    for (let i = 0; i < 5; i++) {
-                        accessHandle.write(buffer, { at: 0 });
-                        const start = performance.now();
-                        await accessHandle.flush();
-                        const duration = performance.now() - start;
-                        if (duration < minDuration) minDuration = duration;
-                    }
-                    accessHandle.close();
-                    // Lower threshold to 0.1 ms to reduce false positives
-                    postMessage(minDuration < 0.1);
-                } catch {
-                    postMessage(false);
-                }
-            })()
-        `;
-        const blob = new Blob([workerCode], { type: 'application/javascript' });
-        const blobUrl = URL.createObjectURL(blob);
-        /** @type {Worker|null} */
-        let worker = null;
-        const cleanUp = () => {
-            if (worker) worker.terminate();
-            URL.revokeObjectURL(blobUrl);
-        };
-        try {
-            worker = new Worker(blobUrl);
-        } catch {
-            cleanUp();
-            resolve(false);
-            return;
-        }
-        const timeout = setTimeout(() => {
-            cleanUp();
-            resolve(false);
-        }, 150);
-        worker.onmessage = e => {
-            clearTimeout(timeout);
-            cleanUp();
-            resolve(e.data);
-        };
-        worker.onerror = () => {
-            clearTimeout(timeout);
-            cleanUp();
-            resolve(false);
-        };
-    });
+    return false;
 }
 
 // @ts-check
