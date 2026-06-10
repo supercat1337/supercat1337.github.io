@@ -750,28 +750,87 @@ async function testSafariPrivate() {
 
 /**
  * Chromium incognito detection using storage quota estimate.
- * In incognito mode, the storage quota is typically very small (e.g., 10–20 MB).
+ * In normal mode, quota is several GB. In incognito, it's typically < 120 MB.
  *
  * @returns {Promise<boolean>}
  */
 async function testChromiumPrivate() {
-    if (typeof navigator.storage?.estimate !== 'function') {
-        // Fallback for older Chrome without the API
-        return false;
+    // 1. Modern API: storage.estimate()
+    if (typeof navigator.storage?.estimate === 'function') {
+        try {
+            const estimate = await navigator.storage.estimate();
+            const INCOGNITO_THRESHOLD = 150 * 1024 * 1024; // 150 MB
+            if (estimate.quota && estimate.quota < INCOGNITO_THRESHOLD) {
+                return true;
+            }
+            return false;
+        } catch (e) {
+            // Fall through to legacy method
+        }
     }
 
-    try {
-        const estimate = await navigator.storage.estimate();
-        // Quota is in bytes. Incognito mode typically gives < 100 MB.
-        // You can adjust the threshold as needed (e.g., 50 * 1024 * 1024).
-        if (estimate.quota && estimate.quota < 50 * 1024 * 1024) {
-            return true;
+    // 2. Legacy fallback: RequestFileSystem (old Chrome, Safari)
+    return legacyChromiumTest();
+}
+
+/**
+ * Legacy fallback using RequestFileSystem or time-based flush.
+ */
+function legacyChromiumTest() {
+    return new Promise(resolve => {
+        const workerCode = `
+            (async () => {
+                try {
+                    const root = await navigator.storage.getDirectory();
+                    const fileHandle = await root.getFileHandle('_', { create: true });
+                    const accessHandle = await fileHandle.createSyncAccessHandle();
+                    const buffer = new Uint8Array(10240);
+                    let minDuration = Infinity;
+                    for (let i = 0; i < 5; i++) {
+                        accessHandle.write(buffer, { at: 0 });
+                        const start = performance.now();
+                        await accessHandle.flush();
+                        const duration = performance.now() - start;
+                        if (duration < minDuration) minDuration = duration;
+                    }
+                    accessHandle.close();
+                    // Lower threshold to 0.1 ms to reduce false positives
+                    postMessage(minDuration < 0.1);
+                } catch {
+                    postMessage(false);
+                }
+            })()
+        `;
+        const blob = new Blob([workerCode], { type: 'application/javascript' });
+        const blobUrl = URL.createObjectURL(blob);
+        /** @type {Worker|null} */
+        let worker = null;
+        const cleanUp = () => {
+            if (worker) worker.terminate();
+            URL.revokeObjectURL(blobUrl);
+        };
+        try {
+            worker = new Worker(blobUrl);
+        } catch {
+            cleanUp();
+            resolve(false);
+            return;
         }
-        return false;
-    } catch (error) {
-        // If we cannot get estimate, assume normal mode.
-        return false;
-    }
+        const timeout = setTimeout(() => {
+            cleanUp();
+            resolve(false);
+        }, 150);
+        worker.onmessage = e => {
+            clearTimeout(timeout);
+            cleanUp();
+            resolve(e.data);
+        };
+        worker.onerror = () => {
+            clearTimeout(timeout);
+            cleanUp();
+            resolve(false);
+        };
+    });
 }
 
 // @ts-check
