@@ -47,7 +47,6 @@ async function main() {
                 <tr><td>User Agent</td><td>${navigator.userAgent}</td></tr>
                 <tr><td>Browser</td><td>${env.browser.name} ${env.browser.version}</td></tr>
                 <tr><td>Browser language</td><td>${browserLanguage}</td></tr>
-                <tr><td>Incognito Mode</td><td>${env.browser.isIncognito ? "Yes" : "No"}</td></tr>
                 <tr><td>Webview</td><td>${webview ? "Yes" : "No"}</td></tr>
             </tbody>
         </table>

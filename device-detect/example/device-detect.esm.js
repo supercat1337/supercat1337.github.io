@@ -575,187 +575,6 @@ function getLanguages(displayLocale, fallbackLanguages) {
 
 
 /**
- * Detects if the browser is operating in Private/Incognito mode.
- * Highly robust implementation addressing RAM-backed storage isolation.
- *
- * @returns {Promise<boolean>} Resolves to true if private mode is detected, false otherwise.
- */
-async function isIncognitoMode() {
-    if (!isClient) return false;
-
-    // 1. Check legacy Internet Explorer engines first
-    if (isMSIEEngine()) {
-        return msiePrivateTest();
-    }
-
-    // 2. Fetch the standardized browser name from the shared helper
-    const browserName = await getBrowser();
-
-    try {
-        if (browserName.startsWith('Firefox')) {
-            return await testFirefoxPrivate();
-        }
-
-        if (browserName.startsWith('Safari')) {
-            return await testSafariPrivate();
-        }
-
-        // Modern Chromium-based browsers (Chrome, Edge, Opera, Vivaldi, Brave)
-        if (
-            browserName.startsWith('Chrome') ||
-            browserName.startsWith('Edge') ||
-            browserName.startsWith('Opera')
-        ) {
-            return await testChromiumModernPrivate();
-        }
-    } catch (e) {
-        // Fail silently and return false if DOM exceptions or security errors are thrown
-        return false;
-    }
-
-    return false;
-}
-
-/**
- * Internal helper to identify legacy Internet Explorer engines.
- * @returns {boolean}
- */
-function isMSIEEngine() {
-    // @ts-ignore
-    return (
-        'ActiveXObject' in window ||
-        (typeof navigator !== 'undefined' && /MSIE|Trident/i.test(navigator.userAgent))
-    );
-}
-
-/**
- * Internet Explorer private mode detection fallback.
- * @returns {boolean}
- */
-function msiePrivateTest() {
-    try {
-        return typeof window.indexedDB === 'undefined';
-    } catch (e) {
-        return true;
-    }
-}
-
-/**
- * Firefox implementation leveraging Origin Private File System (OPFS) constraints.
- * OPFS throws a explicit SecurityError inside Private Browsing mode.
- *
- * @returns {Promise<boolean>}
- */
-async function testFirefoxPrivate() {
-    if (navigator.storage && typeof navigator.storage.getDirectory === 'function') {
-        try {
-            await navigator.storage.getDirectory();
-            return false;
-        } catch (e) {
-            const errName = e instanceof Error ? e.name : String(e);
-            return errName.includes('SecurityError');
-        }
-    }
-    return false;
-}
-
-/**
- * Safari implementation extracting transient storage layer exceptions.
- *
- * @returns {Promise<boolean>}
- */
-async function testSafariPrivate() {
-    if (navigator.storage && typeof navigator.storage.getDirectory === 'function') {
-        try {
-            await navigator.storage.getDirectory();
-            return false;
-        } catch (e) {
-            const message = e instanceof Error ? e.message.toLowerCase() : String(e).toLowerCase();
-            // Safari explicitly flags OPFS as transient/quota restricted in private tabs
-            return message.includes('transient') || message.includes('quota');
-        }
-    }
-
-    // Legacy Safari fallback using synchronous WebSQL allocation limits
-    try {
-        // @ts-ignore
-        if (typeof openDatabase === 'function') {
-            // @ts-ignore
-            openDatabase('safari_incog_test', '1.0', 'test', 1024);
-            return false;
-        }
-    } catch (e) {
-        return true;
-    }
-
-    return false;
-}
-
-/**
- * Modern Chromium incognito detection strategy.
- * * Compares the legacy webkitTemporaryStorage allocation limits against the V8
- * JavaScript heap limits. Standard Chromium spoofing targets navigator.storage.estimate(),
- * but leaves webkitTemporaryStorage bound to the physical RAM constraints allocated
- * for the Incognito sandbox profile.
- *
- * @param {import('./types.js').ChromiumDetectionOptions} [options] Optional parameters for threshold calibration.
- * @returns {Promise<boolean>}
- */
-async function testChromiumModernPrivate(options = {}) {
-    const minStorageThreshold = options.minStorageThreshold || 1.5 * 1024 * 1024 * 1024; // 1.5 GB
-    const heapMultiplier = options.heapMultiplier || 2;
-
-    if (
-        // @ts-ignore
-        navigator.webkitTemporaryStorage &&
-        // @ts-ignore
-        typeof navigator.webkitTemporaryStorage.queryUsageAndQuota === 'function'
-    ) {
-        return new Promise(resolve => {
-            // @ts-ignore
-            navigator.webkitTemporaryStorage.queryUsageAndQuota(
-                // @ts-ignore
-                (usage, quota) => {
-                    // In standard profiles, Chrome allocates vast disk space allowances.
-                    // In Incognito, the pool is limited directly by the OS/V8 memory footprint.
-                    // @ts-ignore
-                    const heapLimit =
-                    // @ts-ignore
-                        window.performance?.memory?.jsHeapSizeLimit || 2 * 1024 * 1024 * 1024;
-
-                    // Trigger detection if quota matches memory bounds or falls below the physical RAM threshold
-                    if (quota <= heapLimit * heapMultiplier || quota < minStorageThreshold) {
-                        resolve(true);
-                    } else {
-                        resolve(false);
-                    }
-                },
-                () => {
-                    resolve(false);
-                }
-            );
-        });
-    }
-
-    // Secondary fallback for restricted environments where legacy storage interfaces are stripped
-    if (navigator.storage && typeof navigator.storage.estimate === 'function') {
-        try {
-            const estimate = await navigator.storage.estimate();
-            if (estimate.quota && estimate.quota < 120 * 1024 * 1024) {
-                return true;
-            }
-        } catch (e) {
-            // Absorb internal estimate failures
-        }
-    }
-
-    return false;
-}
-
-// @ts-check
-
-
-/**
  * Asynchronously gets the Android device marketing name or model.
  *
  * @param {string} [userAgent=getSafeUserAgent()] The user agent string.
@@ -1112,8 +931,8 @@ async function getEnvironment(displayLocale, customUserAgent) {
         deviceType = 'mobile';
     }
 
-    // 3. Execute heavy asynchronous tasks in parallel (OPFS Worker & Client Hints)
-    const [deviceModel, isIncognito] = await Promise.all([getDeviceModel(ua), isIncognitoMode()]);
+    // 3. Get device model
+    const deviceModel = await getDeviceModel(ua);
 
     // 4. Extract browser and OS full strings, then safely parse them
     const fullBrowser = await getBrowser(ua); // E.g., "Chrome 122.0.0.0"
@@ -1130,7 +949,6 @@ async function getEnvironment(displayLocale, customUserAgent) {
         browser: {
             name: browserInfo.name,
             version: browserInfo.version,
-            isIncognito: isIncognito,
         },
         os: {
             name: osInfo.name,
@@ -1230,4 +1048,4 @@ function getDeviceType(userAgent = getSafeUserAgent()) {
     return 'desktop';
 }
 
-export { getAndroidDeviceName, getAppleDeviceModel, getBrowser, getBrowserLanguage, getCountryName, getDeviceModel, getDeviceType, getEnvironment, getLanguages, getOS, getTimeZone, isIPad, isIPhone, isIncognitoMode, isMac, isMobile, isPointerDevice, isSensorDevice, isWebview, isWindows11 };
+export { getAndroidDeviceName, getAppleDeviceModel, getBrowser, getBrowserLanguage, getCountryName, getDeviceModel, getDeviceType, getEnvironment, getLanguages, getOS, getTimeZone, isIPad, isIPhone, isMac, isMobile, isPointerDevice, isSensorDevice, isWebview, isWindows11 };
